@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+*.bak
+*.rar
+*.zip
+.DS_Store
+.vscode/
+.idea/
+
+# Large 3DGS / QNTC scene files
+scenes/
+*.ply
+*.pth
+*.pt
+*.ckpt
+
+# Evaluation outputs
+renders_eval/
+output/
+outputs/
+imgui.ini
