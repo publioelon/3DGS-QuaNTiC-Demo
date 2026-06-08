@@ -1,8 +1,10 @@
-glfw
-PyGLM
-imgui
-PyOpenGL
 numpy
-imageio
+glfw
+PyOpenGL
+imgui
 plyfile
+imageio
+PyGLM
 Pillow
+cuda-python==12.3.0
+tinycudann @ git+https://github.com/NVlabs/tiny-cuda-nn/@2e757bbe781db59c4980d389d7dccbf5edc09669#subdirectory=bindings/torch

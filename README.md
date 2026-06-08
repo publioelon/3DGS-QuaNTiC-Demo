@@ -185,13 +185,6 @@ NTC_000295.pth
 
 On the receiver side, the viewer should open and print NTC/rendering diagnostics while playback runs.
 
-## Notes
-
-TCP is used here as a simple and stable transport for testing progressive delivery of compressed NTC updates. More advanced transport options, such as RTP/UDP or QUIC, are left for future work.
-
-Large scene files such as `.ply`, `.pth`, `.pt`, and `.ckpt` should not be committed directly to the Git repository. Store them externally and provide a download link instead.
-
-The provided demo scene is intended as a quick way to test the streaming pipeline. Users who want to generate their own scenes should use the original 3DGStream repository and then export the scene into the expected FVV layout.
 
 ## Acknowledgment
 
