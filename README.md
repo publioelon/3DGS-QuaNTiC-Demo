@@ -41,15 +41,15 @@ scene_root/
 
 The current stable demo does not require `additional_3dgs`.
 
-A ready-to-run demo scene can be downloaded from:
+A ready-to-run Flame Steak demo scene can be downloaded from Google Drive:
 
-```text
-TODO: add demo scene download link here
-```
+https://drive.google.com/file/d/1AXDqSzSaT_uNu_DhKeSmZmrBAfuOhWYY/view
 
 After downloading and extracting the scene package, use the extracted folder as the `--root` argument when running `tcp_fvv_sender.py`.
 
-To obtain scenes from scratch, follow the original 3DGStream instructions: https://github.com/SJoJoK/3DGStream
+To obtain or train scenes from scratch, follow the original 3DGStream instructions:
+
+https://github.com/SJoJoK/3DGStream
 
 ## Environment
 
@@ -102,6 +102,12 @@ C:\path\to\scene_root
 ```
 
 with the folder containing `init_3dgs.ply` and the `NTCs/` directory.
+
+For example, after extracting the provided Flame Steak demo scene, the scene path may look like this:
+
+```text
+C:\Users\YourName\Downloads\flame_steak_ntc_int4_b64_stable_no_additions
+```
 
 ### Terminal 1: receiver/viewer
 
@@ -184,6 +190,8 @@ On the receiver side, the viewer should open and print NTC/rendering diagnostics
 TCP is used here as a simple and stable transport for testing progressive delivery of compressed NTC updates. More advanced transport options, such as RTP/UDP or QUIC, are left for future work.
 
 Large scene files such as `.ply`, `.pth`, `.pt`, and `.ckpt` should not be committed directly to the Git repository. Store them externally and provide a download link instead.
+
+The provided demo scene is intended as a quick way to test the streaming pipeline. Users who want to generate their own scenes should use the original 3DGStream repository and then export the scene into the expected FVV layout.
 
 ## Acknowledgment
 
