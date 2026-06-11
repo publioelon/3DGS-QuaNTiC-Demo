@@ -4,199 +4,227 @@
 
 3DGS-QuaNTiC is a live streaming demo framework for dynamic 3D Gaussian Splatting scenes represented with Neural Transformation Caches (NTCs).
 
-The system sends the initial 3D Gaussian scene once and then progressively streams NTC files to update the motion of the scene over time. This repository focuses on compressed NTC delivery and progressive playback, so TCP is used as a stable baseline transport.
+The system sends the initial 3D Gaussian scene once and then progressively streams NTC files to update the motion of the scene over time. This repository focuses on compressed NTC delivery and progressive playback using TCP as a stable baseline transport.
+
+## Features
+
+- Live TCP streaming of dynamic 3D Gaussian Splatting scenes.
+- Initial 3DGS scene transmission followed by progressive NTC updates.
+- Support for sparse NTC update streaming through the `ntc_stride` option.
+- Receiver-side file cache for progressive playback.
+- Linux/Ubuntu support with PyTorch CUDA, tiny-cuda-nn, and diff-gaussian-rasterization.
+- Runtime stream monitor showing received files, goodput, cache status, and playback state.
 
 ## Main files
 
-`main.py` starts the viewer. It supports offline loading and live TCP receiving.
+- `main.py`: viewer and TCP receiver entry point.
+- `live_tcp.py`: receives streamed scene files, writes them to the local cache, and exposes received NTCs to the renderer.
+- `tcp_fvv_sender.py`: sends the initial scene, NTC config, and selected NTC files to the viewer.
+- `renderer_cuda.py`: applies NTC motion and renders the dynamic Gaussian scene.
+- `renderer_ogl.py`: OpenGL rendering path used by the viewer.
+- `util_3dgstream.py`: 3DGStream scene loading utilities.
+- `NTC.py`: Neural Transformation Cache model definition.
+- `scripts/setup_linux_venv.sh`: creates the Linux Python environment and installs CUDA extensions.
+- `scripts/download_flame_steak.sh`: downloads the Flame Steak demo scene.
+- `requirements-linux.txt`: Linux Python runtime dependencies that do not require custom CUDA compilation.
 
-`live_tcp.py` receives streamed scene files, writes them into a local cache, and exposes the received NTCs to the renderer.
+## Tested platform
 
-`tcp_fvv_sender.py` sends the initial scene, the NTC config, and the selected NTC files to the viewer.
+The Linux version was tested on Ubuntu with an NVIDIA GPU.
 
-`renderer_cuda.py` applies the NTC motion and renders the dynamic Gaussian scene.
+The setup script defaults to RTX 40-series settings:
 
-`renderer_ogl.py` provides the OpenGL rendering path used by the viewer.
+    TCNN_CUDA_ARCHITECTURES=89
+    TORCH_CUDA_ARCH_LIST=8.9
 
-`util_3dgstream.py` contains the loading code for FP32, FP16, INT8, and INT4 NTC checkpoints.
+For RTX 30-series GPUs, use:
 
-`util_gau.py` loads the initial Gaussian PLY scene.
+    TCNN_CUDA_ARCHITECTURES=86
+    TORCH_CUDA_ARCH_LIST=8.6
 
-`NTC.py` defines the Neural Transformation Cache wrapper used during playback.
+## 1. Install Ubuntu system packages
 
-## Scene files
+Run:
 
-The scene files are not included in this repository because they contain large `.ply` and `.pth` files.
+    sudo apt update
+    sudo apt install -y git build-essential cmake ninja-build pkg-config libglfw3 libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-utils unzip wget
 
-A streamed scene should follow this structure:
+## 2. Clone the repository
 
-```text
-scene_root/
-  init_3dgs.ply
-  NTCs/
-    config.json
-    NTC_000000.pth
-    NTC_000001.pth
-    NTC_000002.pth
-    ...
-```
+After the repository is renamed, use:
 
-The current stable demo does not require `additional_3dgs`.
+    cd ~
+    git clone https://github.com/publioelon/3DGS-QuaNTiC.git
+    cd 3DGS-QuaNTiC
 
-A ready-to-run Flame Steak demo scene can be downloaded from Google Drive:
+If you are using the old repository name before the rename, use:
 
-https://drive.google.com/file/d/1AXDqSzSaT_uNu_DhKeSmZmrBAfuOhWYY/view
+    cd ~
+    git clone https://github.com/publioelon/QNTC-Stream-Demo.git
+    cd QNTC-Stream-Demo
 
-After downloading and extracting the scene package, use the extracted folder as the `--root` argument when running `tcp_fvv_sender.py`.
+## 3. Create the Linux Python environment
 
-To obtain or train scenes from scratch, follow the original 3DGStream instructions:
+For RTX 40-series GPUs:
 
-https://github.com/SJoJoK/3DGStream
+    ./scripts/setup_linux_venv.sh
+    source ~/venvs/qntcstream/bin/activate
 
-## Environment
+For RTX 30-series GPUs:
 
-This project requires a CUDA-capable Python environment. The code was tested using a Conda environment named `3dgstream`.
+    TCNN_CUDA_ARCHITECTURES=86 TORCH_CUDA_ARCH_LIST=8.6 ./scripts/setup_linux_venv.sh
+    source ~/venvs/qntcstream/bin/activate
 
-Typical dependencies include:
+The setup script installs:
 
-```text
-PyTorch with CUDA
-tiny-cuda-nn
-diff-gaussian-rasterization
-cuda-python
-glfw
-PyOpenGL
-imgui
-plyfile
-imageio
-PyGLM
-numpy
-```
+- PyTorch CUDA 12.6
+- cuda-python
+- tiny-cuda-nn
+- diff-gaussian-rasterization
+- simple-knn
+- GLFW / OpenGL Python viewer dependencies
 
-Activate your environment before running the viewer or sender:
+## 4. Download the Flame Steak demo scene
 
-```bat
-conda activate 3dgstream
-```
+Run:
 
-If the basic Python packages are missing, they can be installed with:
+    source ~/venvs/qntcstream/bin/activate
+    ./scripts/download_flame_steak.sh
 
-```bat
-pip install glfw PyOpenGL imgui plyfile imageio PyGLM
-```
+The scene is extracted to:
 
-The CUDA-specific packages, especially `tiny-cuda-nn` and `diff-gaussian-rasterization`, should match the CUDA and PyTorch versions installed on your machine.
+    ~/qntc_scenes/flame_steak_official
 
-## Local TCP test
+Expected structure:
 
-Open two Anaconda Prompt terminals.
+    flame_steak_official/
+      init_3dgs.ply
+      NTCs/
+        config.json
+        NTC_000000.pth
+        ...
+        NTC_000298.pth
 
-Replace:
+The scene files are not stored in this repository because `.ply` and `.pth` files are large.
 
-```text
-C:\path\to\QNTC-Stream-Demo
-```
+## 5. Run the TCP demo
 
-with the folder where this repository was cloned, and replace:
-
-```text
-C:\path\to\scene_root
-```
-
-with the folder containing `init_3dgs.ply` and the `NTCs/` directory.
-
-For example, after extracting the provided Flame Steak demo scene, the scene path may look like this:
-
-```text
-C:\Users\YourName\Downloads\flame_steak_ntc_int4_b64_stable_no_additions
-```
+Open two terminals.
 
 ### Terminal 1: receiver/viewer
 
-```bat
-conda activate 3dgstream
-cd /d C:\path\to\QNTC-Stream-Demo
+Run:
 
-python main.py ^
-  --tcp_listen 5001 ^
-  --tcp_bind 127.0.0.1 ^
-  --tcp_cache C:\tmp\qntc_stream_test ^
-  --tcp_clear_cache ^
-  --frames 300 ^
-  --autoplay
-```
+    cd ~/3DGS-QuaNTiC
+    source ~/venvs/qntcstream/bin/activate
 
-This starts the viewer and waits for the sender.
+    python main.py \
+      --tcp_listen 5001 \
+      --tcp_bind 127.0.0.1 \
+      --tcp_cache /tmp/qntc_stream_test \
+      --tcp_clear_cache \
+      --frames 300 \
+      --video_fps 30 \
+      --autoplay
+
+If you are still using the old local folder name, replace:
+
+    cd ~/3DGS-QuaNTiC
+
+with:
+
+    cd ~/QNTC-Stream-Demo
 
 ### Terminal 2: sender
 
-```bat
-conda activate 3dgstream
-cd /d C:\path\to\QNTC-Stream-Demo
+Run:
 
-python tcp_fvv_sender.py ^
-  --host 127.0.0.1 ^
-  --port 5001 ^
-  --root "C:\path\to\scene_root" ^
-  --start 0 ^
-  --end 298 ^
-  --ntc_stride 1 ^
-  --no_additions
-```
+    cd ~/3DGS-QuaNTiC
+    source ~/venvs/qntcstream/bin/activate
 
-Use `--ntc_stride 1` to send every NTC file.
+    python tcp_fvv_sender.py \
+      --host 127.0.0.1 \
+      --port 5001 \
+      --root "$HOME/qntc_scenes/flame_steak_official" \
+      --start 0 \
+      --end 298 \
+      --ntc_stride 1 \
+      --no_additions
 
-For a sparse update-rate test, use a larger stride:
+The viewer should display the dynamic Flame Steak scene while the sender streams the initial 3DGS and NTC files.
 
-```bat
-python tcp_fvv_sender.py ^
-  --host 127.0.0.1 ^
-  --port 5001 ^
-  --root "C:\path\to\scene_root" ^
-  --start 0 ^
-  --end 298 ^
-  --ntc_stride 5 ^
-  --no_additions
-```
+## Sparse NTC update mode
 
-With `--ntc_stride 5`, the sender transmits one NTC every five frames. The receiver keeps playback running by reusing the most recent received NTC for the intermediate frames.
+To stream fewer NTC updates, increase `ntc_stride`.
 
-## Expected output
+Example:
 
-On the sender side, a successful run should show messages similar to:
+    python tcp_fvv_sender.py \
+      --host 127.0.0.1 \
+      --port 5001 \
+      --root "$HOME/qntc_scenes/flame_steak_official" \
+      --start 0 \
+      --end 298 \
+      --ntc_stride 5 \
+      --no_additions
 
-```text
-[SENDER] selected NTC count: 299
-[SENDER] connected to 127.0.0.1:5001
-[SEND] init_3dgs.ply
-[SEND] NTCs/config.json
-[SEND] NTCs/NTC_000000.pth
-...
-[SENDER] done
-```
+With stride-based streaming, only every N-th NTC is transmitted. The receiver reuses the most recently available NTC when an intermediate update is unavailable.
 
-For a 299-NTC scene, `--ntc_stride 5` should select around 60 NTC files:
+## Hybrid NVIDIA laptops
 
-```text
-NTC_000000.pth
-NTC_000005.pth
-NTC_000010.pth
-...
-NTC_000295.pth
-```
+On some laptops, OpenGL may open on the integrated GPU instead of the NVIDIA GPU. Check with:
 
-On the receiver side, the viewer should open and print NTC/rendering diagnostics while playback runs.
+    glxinfo -B | grep -E "OpenGL renderer|OpenGL version"
 
+If the renderer is not NVIDIA, run the receiver with NVIDIA PRIME:
+
+    __NV_PRIME_RENDER_OFFLOAD=1 \
+    __GLX_VENDOR_LIBRARY_NAME=nvidia \
+    python main.py \
+      --tcp_listen 5001 \
+      --tcp_bind 127.0.0.1 \
+      --tcp_cache /tmp/qntc_stream_test \
+      --tcp_clear_cache \
+      --frames 300 \
+      --video_fps 30 \
+      --autoplay
+
+## Linux compatibility note
+
+Linux support required a rasterizer compatibility change in `renderer_cuda.py`.
+
+The Linux-tested setting is:
+
+    "antialiasing": False,
+
+The older setting below was removed because the Linux-installed `diff-gaussian-rasterization` version does not accept it:
+
+    "bwd_depth": False,
+
+## Troubleshooting
+
+### GitHub scene download fails
+
+If `gdown` fails, open `scripts/download_flame_steak.sh` and verify that the Google Drive file ID is still valid.
+
+### Viewer opens but stays black
+
+First check the viewer panel. If it reports a rasterizer argument error, the installed `diff-gaussian-rasterization` version may not match the expected API.
+
+Also check that the receiver has received:
+
+    init_3dgs.ply
+    NTCs/config.json
+    NTCs/NTC_000000.pth
+
+### OpenGL uses the wrong GPU
+
+Use the NVIDIA PRIME receiver command shown above.
+
+### simple-knn reports `libc10.so` not found
+
+Import `torch` before importing `simple_knn`, or ensure PyTorch shared libraries are visible in the active environment.
 
 ## Acknowledgment
 
 This project builds on the 3DGStream/3DGStreamViewer codebase and extends it with TCP-based progressive streaming, quantized NTC loading, sparse NTC update support, and live playback/cache monitoring.
-
----
-
-## Linux support
-
-3DGS-QuaNTiC can also run on Linux with an NVIDIA GPU, PyTorch CUDA, `tiny-cuda-nn`, and `diff-gaussian-rasterization`.
-
-See the full Linux guide in `docs/linux.md`.
-
