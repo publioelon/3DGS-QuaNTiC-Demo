@@ -207,9 +207,9 @@ Example:
 
 With stride-based streaming, only every N-th NTC is transmitted. The receiver reuses the most recently received NTC for intermediate frames.
 
-## Hybrid NVIDIA laptops
+## NVIDIA GPU selection on laptops
 
-On some laptops, OpenGL may open on the integrated GPU instead of the NVIDIA GPU.
+On laptops with both integrated and dedicated graphics, OpenGL may open on the integrated GPU instead of the NVIDIA GPU.
 
 Check with:
 
