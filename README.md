@@ -4,12 +4,13 @@
 
 3DGS-QuaNTiC is a live streaming demo framework for dynamic 3D Gaussian Splatting scenes represented with Neural Transformation Caches (NTCs).
 
-The system sends the initial 3D Gaussian scene once and then progressively streams NTC files to update the motion of the scene over time. This repository focuses on compressed NTC delivery and progressive playback using TCP as a stable baseline transport.
+The system sends the initial 3D Gaussian scene once and then progressively streams NTC files to update the motion of the scene over time. This repository focuses on compressed NTC delivery, progressive playback, sparse temporal update streaming, and TCP-based live transmission as a stable baseline transport.
 
 ## Features
 
 - Live TCP streaming of dynamic 3D Gaussian Splatting scenes.
 - Initial 3DGS scene transmission followed by progressive NTC updates.
+- NTC quantization utility for FP16, INT8, and INT4 conversion.
 - Sparse NTC update streaming through the `--ntc_stride` option.
 - Receiver-side cache for progressive playback.
 - Linux/Ubuntu support with PyTorch CUDA, `tiny-cuda-nn`, and `diff-gaussian-rasterization`.
@@ -20,6 +21,7 @@ The system sends the initial 3D Gaussian scene once and then progressively strea
 - `main.py`: viewer and TCP receiver entry point.
 - `live_tcp.py`: receives streamed scene files and writes them to the local cache.
 - `tcp_fvv_sender.py`: sends the initial scene, NTC config, and selected NTC files.
+- `quantize_ntcs.py`: converts NTC files to FP16, INT8, or INT4 and writes a quantization manifest.
 - `renderer_cuda.py`: applies NTC motion and renders the dynamic Gaussian scene.
 - `renderer_ogl.py`: OpenGL rendering path used by the viewer.
 - `util_3dgstream.py`: 3DGStream scene loading utilities.
@@ -44,22 +46,18 @@ For RTX 30-series GPUs, use:
 
 ## 1. Install Ubuntu system packages
 
+Run:
+
     sudo apt update
     sudo apt install -y git build-essential cmake ninja-build pkg-config libglfw3 libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-utils unzip wget
 
 ## 2. Clone the repository
 
-After the repository is renamed:
+Run:
 
     cd ~
     git clone https://github.com/publioelon/3DGS-QuaNTiC-Demo.git
     cd 3DGS-QuaNTiC-Demo
-
-Before the repository rename:
-
-    cd ~
-    git clone https://github.com/publioelon/QNTC-Stream-Demo.git
-    cd QNTC-Stream-Demo
 
 ## 3. Create the Linux Python environment
 
@@ -76,6 +74,8 @@ For RTX 30-series GPUs:
 The setup script installs PyTorch CUDA, `cuda-python`, `tiny-cuda-nn`, `diff-gaussian-rasterization`, `simple-knn`, and the OpenGL viewer dependencies.
 
 ## 4. Download the Flame Steak demo scene
+
+Run:
 
     source ~/venvs/qntcstream/bin/activate
     ./scripts/download_flame_steak.sh
@@ -96,11 +96,11 @@ Expected structure:
 
 Scene files are not stored in this repository because `.ply` and `.pth` files are large.
 
-## Quantizing NTC files
+## 5. Quantize NTC files
 
 The repository includes `quantize_ntcs.py`, which converts NTC files to FP16, INT8, or INT4.
 
-FP16 example:
+### FP16 conversion
 
     python quantize_ntcs.py \
       --src "$HOME/qntc_scenes/flame_steak_official" \
@@ -109,7 +109,7 @@ FP16 example:
       --overwrite \
       --verify
 
-INT8 example:
+### INT8 conversion
 
     python quantize_ntcs.py \
       --src "$HOME/qntc_scenes/flame_steak_official" \
@@ -119,7 +119,7 @@ INT8 example:
       --overwrite \
       --verify
 
-INT4 example:
+### INT4 conversion
 
     python quantize_ntcs.py \
       --src "$HOME/qntc_scenes/flame_steak_official" \
@@ -137,14 +137,17 @@ In the Flame Steak test scene, the observed NTC reductions were approximately:
 - INT8, block size 64: 74.18%
 - INT4, block size 64: 86.68%
 
-FP16 outputs are saved as regular PyTorch tensors and can be streamed directly with the current viewer. INT8 and INT4 outputs are saved as packed quantized blobs and require loader-side dequantization support before direct rendering.
+FP16 outputs are saved as regular PyTorch tensors and can be streamed directly with the current viewer.
 
+INT8 and INT4 outputs are saved as packed quantized blobs. These files are useful for compression analysis and require loader-side dequantization support before direct rendering.
 
-## 5. Run the TCP demo
+## 6. Run the TCP demo
 
 Open two terminals.
 
 ### Terminal 1: receiver/viewer
+
+Run:
 
     cd ~/3DGS-QuaNTiC-Demo
     source ~/venvs/qntcstream/bin/activate
@@ -158,11 +161,9 @@ Open two terminals.
       --video_fps 30 \
       --autoplay
 
-If your local folder still has the old name, use:
-
-    cd ~/QNTC-Stream-Demo
-
 ### Terminal 2: sender
+
+To stream the original FP32 NTC scene:
 
     cd ~/3DGS-QuaNTiC-Demo
     source ~/venvs/qntcstream/bin/activate
@@ -176,9 +177,20 @@ If your local folder still has the old name, use:
       --ntc_stride 1 \
       --no_additions
 
+To stream the FP16 quantized NTC scene:
+
+    python tcp_fvv_sender.py \
+      --host 127.0.0.1 \
+      --port 5001 \
+      --root "$HOME/qntc_scenes/flame_steak_fp16" \
+      --start 0 \
+      --end 298 \
+      --ntc_stride 1 \
+      --no_additions
+
 The viewer should display the dynamic Flame Steak scene while the sender streams the initial 3DGS and NTC files.
 
-## Sparse NTC update mode
+## 7. Sparse NTC update mode
 
 To stream fewer NTC updates, increase `--ntc_stride`.
 
@@ -187,7 +199,7 @@ Example:
     python tcp_fvv_sender.py \
       --host 127.0.0.1 \
       --port 5001 \
-      --root "$HOME/qntc_scenes/flame_steak_official" \
+      --root "$HOME/qntc_scenes/flame_steak_fp16" \
       --start 0 \
       --end 298 \
       --ntc_stride 5 \
@@ -227,6 +239,28 @@ The Linux-tested setting is:
 The older setting below was removed because the Linux-installed `diff-gaussian-rasterization` version does not accept it:
 
     "bwd_depth": False,
+
+## Troubleshooting
+
+### Sender reports connection refused
+
+Start the receiver first. The sender connects to `127.0.0.1:5001`, so the receiver must already be listening on that port.
+
+### Viewer opens but stays black
+
+Check the viewer panel for renderer errors. Also verify that the receiver has received:
+
+    init_3dgs.ply
+    NTCs/config.json
+    NTCs/NTC_000000.pth
+
+### OpenGL uses the wrong GPU
+
+Use the NVIDIA PRIME receiver command shown above.
+
+### INT8 or INT4 scene does not render directly
+
+The current quantization script stores INT8 and INT4 outputs as packed quantized blobs. These formats require loader-side dequantization support before direct rendering.
 
 ## Acknowledgment
 
