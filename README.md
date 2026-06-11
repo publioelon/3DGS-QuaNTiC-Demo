@@ -52,8 +52,8 @@ For RTX 30-series GPUs, use:
 After the repository is renamed:
 
     cd ~
-    git clone https://github.com/publioelon/3DGS-QuaNTiC.git
-    cd 3DGS-QuaNTiC
+    git clone https://github.com/publioelon/3DGS-QuaNTiC-Demo.git
+    cd 3DGS-QuaNTiC-Demo
 
 Before the repository rename:
 
@@ -146,7 +146,7 @@ Open two terminals.
 
 ### Terminal 1: receiver/viewer
 
-    cd ~/3DGS-QuaNTiC
+    cd ~/3DGS-QuaNTiC-Demo
     source ~/venvs/qntcstream/bin/activate
 
     python main.py \
@@ -164,7 +164,7 @@ If your local folder still has the old name, use:
 
 ### Terminal 2: sender
 
-    cd ~/3DGS-QuaNTiC
+    cd ~/3DGS-QuaNTiC-Demo
     source ~/venvs/qntcstream/bin/activate
 
     python tcp_fvv_sender.py \

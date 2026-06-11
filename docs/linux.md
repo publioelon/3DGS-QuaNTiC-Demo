@@ -14,8 +14,8 @@ Run:
 Run:
 
     cd ~
-    git clone https://github.com/publioelon/3DGS-QuaNTiC.git
-    cd 3DGS-QuaNTiC
+    git clone https://github.com/publioelon/3DGS-QuaNTiC-Demo.git
+    cd 3DGS-QuaNTiC-Demo
 
 ## 3. Create the Linux environment
 
@@ -33,7 +33,7 @@ For RTX 30-series GPUs:
 
 Run:
 
-    cd ~/3DGS-QuaNTiC
+    cd ~/3DGS-QuaNTiC-Demo
     source ~/venvs/qntcstream/bin/activate
     ./scripts/download_flame_steak.sh
 
@@ -45,7 +45,7 @@ The scene is extracted to:
 
 Open terminal 1:
 
-    cd ~/3DGS-QuaNTiC
+    cd ~/3DGS-QuaNTiC-Demo
     source ~/venvs/qntcstream/bin/activate
 
     python main.py \
@@ -61,7 +61,7 @@ Open terminal 1:
 
 Open terminal 2:
 
-    cd ~/3DGS-QuaNTiC
+    cd ~/3DGS-QuaNTiC-Demo
     source ~/venvs/qntcstream/bin/activate
 
     python tcp_fvv_sender.py \
