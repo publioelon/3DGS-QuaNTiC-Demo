@@ -1,0 +1,11 @@
+glfw
+PyOpenGL
+imgui
+plyfile
+imageio
+PyGLM
+gdown
+ninja
+cmake
+packaging
+cuda-python==12.6.2

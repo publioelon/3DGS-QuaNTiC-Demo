@@ -23,3 +23,20 @@ renders_eval/
 output/
 outputs/
 imgui.ini
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Local backup files
+*.bak
+*.bak_*
+
+# Large scene/model files
+*.pth
+*.ply
+*.zip
+
+# Local output/cache folders
+qntc_stream_test/
+renders_eval/

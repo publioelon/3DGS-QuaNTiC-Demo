@@ -1,6 +1,8 @@
-# QNTC-Stream
+# 3DGS-QuaNTiC
 
-QNTC-Stream is a small TCP-based streaming demo for dynamic 3D Gaussian Splatting scenes represented with Neural Transformation Caches (NTCs).
+**Live Streaming Dynamic 3D Gaussian Splatting Scenes with Quantized Neural Transformation Caches**
+
+3DGS-QuaNTiC is a live streaming demo framework for dynamic 3D Gaussian Splatting scenes represented with Neural Transformation Caches (NTCs).
 
 The system sends the initial 3D Gaussian scene once and then progressively streams NTC files to update the motion of the scene over time. This repository focuses on compressed NTC delivery and progressive playback, so TCP is used as a stable baseline transport.
 
@@ -189,3 +191,12 @@ On the receiver side, the viewer should open and print NTC/rendering diagnostics
 ## Acknowledgment
 
 This project builds on the 3DGStream/3DGStreamViewer codebase and extends it with TCP-based progressive streaming, quantized NTC loading, sparse NTC update support, and live playback/cache monitoring.
+
+---
+
+## Linux support
+
+3DGS-QuaNTiC can also run on Linux with an NVIDIA GPU, PyTorch CUDA, `tiny-cuda-nn`, and `diff-gaussian-rasterization`.
+
+See the full Linux guide in `docs/linux.md`.
+

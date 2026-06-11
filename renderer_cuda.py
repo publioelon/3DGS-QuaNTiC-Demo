@@ -250,7 +250,7 @@ class CUDARenderer(GaussianRenderBase):
             "sh_degree": 1,
             "campos": None,
             "prefiltered": False,
-            "bwd_depth": False,
+            "antialiasing": False,
             "debug": False,
         }
 
@@ -274,7 +274,7 @@ class CUDARenderer(GaussianRenderBase):
 
         # Dump rendered PNG frames when this environment variable is set.
         # Example:
-        #   set DUMP_FRAMES_DIR=C:\Users\Publi\3DGStream\viewer_fvv\renders_eval\fp32_stable
+        #   export DUMP_FRAMES_DIR=/path/to/renders_eval/fp32_stable
         self.dump_frames_dir = os.environ.get("DUMP_FRAMES_DIR", "").strip()
         self.dumped_timesteps = set()
 

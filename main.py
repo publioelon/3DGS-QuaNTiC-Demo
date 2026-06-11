@@ -58,7 +58,7 @@ g_show_qntc_demo_win = True
 g_qntc_demo_manifest = None
 g_qntc_demo_manifest_path = os.environ.get(
     "QNTC_DEMO_MANIFEST",
-    r"C:\Users\Publi\3DGStream\viewer_fvv\qntc_demo_manifest.json",
+    r"qntc_demo_manifest.json",
 )
 
 g_render_mode_tables = [
