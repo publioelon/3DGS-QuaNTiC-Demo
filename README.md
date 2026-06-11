@@ -96,6 +96,50 @@ Expected structure:
 
 Scene files are not stored in this repository because `.ply` and `.pth` files are large.
 
+## Quantizing NTC files
+
+The repository includes `quantize_ntcs.py`, which converts NTC files to FP16, INT8, or INT4.
+
+FP16 example:
+
+    python quantize_ntcs.py \
+      --src "$HOME/qntc_scenes/flame_steak_official" \
+      --out "$HOME/qntc_scenes/flame_steak_fp16" \
+      --mode fp16 \
+      --overwrite \
+      --verify
+
+INT8 example:
+
+    python quantize_ntcs.py \
+      --src "$HOME/qntc_scenes/flame_steak_official" \
+      --out "$HOME/qntc_scenes/flame_steak_int8_b64" \
+      --mode int8 \
+      --block-size 64 \
+      --overwrite \
+      --verify
+
+INT4 example:
+
+    python quantize_ntcs.py \
+      --src "$HOME/qntc_scenes/flame_steak_official" \
+      --out "$HOME/qntc_scenes/flame_steak_int4_b64" \
+      --mode int4 \
+      --block-size 64 \
+      --overwrite \
+      --verify
+
+The script writes `quantization_manifest.json` with file sizes, compression ratio, reduction percentage, and optional reconstruction-error statistics.
+
+In the Flame Steak test scene, the observed NTC reductions were approximately:
+
+- FP16: 49.98%
+- INT8, block size 64: 74.18%
+- INT4, block size 64: 86.68%
+
+FP16 outputs are saved as regular PyTorch tensors and can be streamed directly with the current viewer. INT8 and INT4 outputs are saved as packed quantized blobs and require loader-side dequantization support before direct rendering.
+
+
 ## 5. Run the TCP demo
 
 Open two terminals.
