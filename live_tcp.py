@@ -47,12 +47,13 @@ from util_3dgstream import (
     _dequantize_int8_ntc_state_if_needed,
     _extract_bounds_from_ckpt,
 )
+from ntc5k import load_ntc5k
 
 
 def infer_total_frames(fvv_root: str) -> int:
     root = Path(fvv_root)
     ntc_dir = root / "NTCs"
-    ntcs = sorted(ntc_dir.glob("NTC_*.pth"))
+    ntcs = sorted(ntc_dir.glob("NTC_*.ntc5k")) or sorted(ntc_dir.glob("NTC_*.pth"))
     return max(1, len(ntcs) + 1)
 
 
@@ -575,6 +576,8 @@ class LiveTCPState:
             od.popitem(last=False)
 
     def _load_raw_checkpoint(self, path: str):
+        if str(path).lower().endswith(".ntc5k"):
+            return load_ntc5k(path)
         # Try weights_only if available (torch>=2), else normal.
         if torch is None:
             raise RuntimeError("torch not available")
