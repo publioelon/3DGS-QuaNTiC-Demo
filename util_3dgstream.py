@@ -19,6 +19,7 @@ from plyfile import PlyData, PlyElement
 from NTC import NeuralTransformationCache
 from renderer_cuda import GaussianDataCUDA, gaus_cuda_from_cpu
 from util_gau import load_ply
+from ntc5k import load_ntc5k
 
 
 def _unpack_signed_int4_to_float(packed, num_values, quantization="offset_signed_int4_packed"):
@@ -372,11 +373,16 @@ def load_NTCs(FVV_path: str, gau_cuda: GaussianDataCUDA, total_frames: Optional[
     ntc_dir = os.path.join(fvv_path, "NTCs")
 
     ntc_paths = sorted(glob.glob(os.path.join(ntc_dir, "NTC_*.pth")))
+    ntc5k_paths = sorted(glob.glob(os.path.join(ntc_dir, "NTC_*.ntc5k")))
+    if ntc5k_paths:
+        if ntc_paths:
+            print("[NTC5K] compact files found; preferring .ntc5k over .pth")
+        ntc_paths = ntc5k_paths
 
     if len(ntc_paths) == 0:
         raise FileNotFoundError(
-            f"No NTC_*.pth found in: {ntc_dir}\n"
-            "Expected files like NTC_000000.pth, NTC_000001.pth, ..."
+            f"No NTC_*.pth or NTC_*.ntc5k found in: {ntc_dir}\n"
+            "Expected files like NTC_000000.pth or NTC_000000.ntc5k"
         )
 
     if total_frames is None:
@@ -391,7 +397,7 @@ def load_NTCs(FVV_path: str, gau_cuda: GaussianDataCUDA, total_frames: Optional[
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load first checkpoint once. It may contain config and bounds.
-    first_ckpt = _torch_load_cpu(ntc_paths[0])
+    first_ckpt = load_ntc5k(ntc_paths[0]) if ntc_paths[0].endswith(".ntc5k") else _torch_load_cpu(ntc_paths[0])
 
     # Load config from config.json or from checkpoint.
     config_path = _find_config_json(fvv_path)
@@ -460,7 +466,7 @@ def load_NTCs(FVV_path: str, gau_cuda: GaussianDataCUDA, total_frames: Optional[
         if i == 0:
             ckpt = first_ckpt
         else:
-            ckpt = _torch_load_cpu(ntc_paths[i])
+            ckpt = load_ntc5k(ntc_paths[i]) if ntc_paths[i].endswith(".ntc5k") else _torch_load_cpu(ntc_paths[i])
 
         state = _extract_state_dict(ckpt)
         state = _dequantize_int4_ntc_state_if_needed(state)
