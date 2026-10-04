@@ -43,5 +43,48 @@ class NeuralTransformationCache(torch.nn.Module):
         d_rot[mask] = masked_d_rot
         
         return mask, d_xyz, d_rot
+
+    @torch.no_grad()
+    def forward_subset(self, xyz: torch.Tensor, indices: torch.Tensor):
+        """Evaluate the NTC only for a preselected Gaussian subset.
+
+        Unlike applying a post-hoc mask to forward(), this reduces the number of
+        coordinates passed through the HashGrid + MLP. It is therefore the path
+        used by compute-budgeted clients.
+
+        Returns tensors in subset order:
+            valid_subset_mask: [K]
+            d_xyz_subset:      [K, 3]
+            d_rot_subset:      [K, 4]
+
+        Non-selected Gaussians are never evaluated here.
+        """
+        if indices is None:
+            raise ValueError("indices must be provided")
+
+        indices = indices.to(device=xyz.device, dtype=torch.long).reshape(-1)
+        if indices.numel() == 0:
+            return (
+                torch.empty((0,), dtype=torch.bool, device=xyz.device),
+                torch.empty((0, 3), dtype=torch.half, device=xyz.device),
+                torch.empty((0, 4), dtype=torch.half, device=xyz.device),
+            )
+
+        xyz_subset = xyz.index_select(0, indices)
+        contracted_xyz = self.get_contracted_xyz(xyz_subset)
+
+        valid = ((contracted_xyz >= 0) & (contracted_xyz <= 1)).all(dim=1)
+        valid_inputs = contracted_xyz[valid]
+
+        d_xyz = torch.zeros((indices.numel(), 3), dtype=torch.half, device=xyz.device)
+        d_rot = torch.zeros((indices.numel(), 4), dtype=torch.half, device=xyz.device)
+        d_rot[:, 0] = 1.0
+
+        if valid_inputs.numel() != 0:
+            resi = self.model(valid_inputs)
+            d_xyz[valid] = resi[:, :3]
+            d_rot[valid] = resi[:, 3:7]
+
+        return valid, d_xyz, d_rot
         
         
