@@ -97,7 +97,8 @@ def wait_stable(path: Path, stable_ms=0, timeout_s=30):
 
 def existing_ntc_indices(ntc_dir: Path):
     out = []
-    for p in sorted(ntc_dir.glob("NTC_*.pth")):
+    candidates = list(ntc_dir.glob("NTC_*.ntc5k")) or list(ntc_dir.glob("NTC_*.pth"))
+    for p in sorted(candidates):
         m = NTC_RE.match(p.name)
         if m:
             out.append(int(m.group(1)))
@@ -194,7 +195,7 @@ def main():
 
     available = existing_ntc_indices(ntc_dir)
     if not available and args.end < 0:
-        raise FileNotFoundError(f"No NTC_*.pth files found in {ntc_dir}")
+        raise FileNotFoundError(f"No NTC_*.pth or NTC_*.ntc5k files found in {ntc_dir}")
 
     if args.end >= 0:
         end_idx = int(args.end)
@@ -229,7 +230,9 @@ def main():
         sent_add = set()
 
         for i in selected_indices:
-            ntc_path = ntc_dir / f"NTC_{i:06d}.pth"
+            compact = ntc_dir / f"NTC_{i:06d}.ntc5k"
+            dense = ntc_dir / f"NTC_{i:06d}.pth"
+            ntc_path = compact if compact.exists() else dense
             add_path = add_dir / f"additions_{i:06d}.ply"
 
             # Send NTC as soon as it exists and is stable.
