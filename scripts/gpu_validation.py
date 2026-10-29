@@ -139,7 +139,8 @@ def main() -> int:
     if a.verify_all or a.all:
         run("299-frame wire-byte parity",
             lambda: run_subprocess("wire parity",
-                [sys.executable, str(script), "--verify-only"], a.project))
+                [sys.executable, str(script), "--verify-only",
+                 "--out", "/tmp/q3dgstream_gpu_eval_113_115"], a.project))
     if a.evaluate_three or a.all:
         run("Three-frame CUDA saliency/random evaluation",
             lambda: run_subprocess("evaluation",
