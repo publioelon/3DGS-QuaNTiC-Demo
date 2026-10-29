@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 240" width="1200" height="240" role="img" aria-label="Q3DGStream pipeline: initial Gaussian scene and NTC updates, PQAT compression, saliency priorities, QUIC transport and NTC receiver">
+<defs><style>.bg{fill:#f8fafc}.title{font:700 17px Arial,sans-serif;fill:#0f172a}.sub{font:13px Arial,sans-serif;fill:#475569}.arrow{fill:none;stroke:#94a3b8;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.num{font:700 12px Arial,sans-serif;fill:white}</style></defs>
+<rect class="bg" width="1200" height="240" rx="20"/>
+<g transform="translate(24,46)"><rect width="200" height="140" rx="16" fill="#dbeafe"/><circle cx="26" cy="26" r="15" fill="#2563eb"/><text class="num" x="26" y="30" text-anchor="middle">1</text><text class="title" x="20" y="66">Dynamic 3DGS</text><text class="sub" x="20" y="92">Initial Gaussians</text><text class="sub" x="20" y="113">+ per-step NTC</text></g>
+<path class="arrow" d="M231 115 h29 m-9 -8 9 8 -9 8"/>
+<g transform="translate(269,46)"><rect width="200" height="140" rx="16" fill="#ede9fe"/><circle cx="26" cy="26" r="15" fill="#7c3aed"/><text class="num" x="26" y="30" text-anchor="middle">2</text><text class="title" x="20" y="66">PQAT + saliency</text><text class="sub" x="20" y="92">INT4 sparse blocks</text><text class="sub" x="20" y="113">P0 · P1 · P2 · P3</text></g>
+<path class="arrow" d="M476 115 h29 m-9 -8 9 8 -9 8"/>
+<g transform="translate(514,46)"><rect width="200" height="140" rx="16" fill="#dcfce7"/><circle cx="26" cy="26" r="15" fill="#16a34a"/><text class="num" x="26" y="30" text-anchor="middle">3</text><text class="title" x="20" y="66">QUIC transport</text><text class="sub" x="20" y="92">Frame + block IDs</text><text class="sub" x="20" y="113">Progressive delivery</text></g>
+<path class="arrow" d="M721 115 h29 m-9 -8 9 8 -9 8"/>
+<g transform="translate(759,46)"><rect width="415" height="140" rx="16" fill="#e0f2fe"/><circle cx="26" cy="26" r="15" fill="#0284c7"/><text class="num" x="26" y="30" text-anchor="middle">4</text><text class="title" x="20" y="66">Client-side NTC reconstruction</text><text class="sub" x="20" y="92">Decode available weights → infer Gaussian motion</text><text class="sub" x="20" y="113">Update positions and rotations → render</text></g>
+</svg>
