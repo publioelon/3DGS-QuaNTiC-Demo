@@ -5,6 +5,19 @@ The research handoff archive was assembled from the verified experiment packages
 
 It includes `research/priority/dynamic_299`, `research/quic/dynamic_priority_adapter`, `research/quic/progressive_299_v2`, the NTC114 HashGrid mapper, and evaluation code.
 
+## One-command import on Ubuntu
+
+Download `3DGS_QuaNTiC_Undergraduate_Handoff_2026-10-29.zip` to your usual Firefox download folder, then:
+
+```bash
+cd ~/snap/firefox/common
+unzip -q 3DGS_QuaNTiC_Undergraduate_Handoff_2026-10-29.zip
+cd 3DGS-QuaNTiC-Undergraduate-Handoff
+bash tools/import_to_github.sh --push
+```
+
+This uses a **separate Git worktree**, runs the archived CPU tests and pushes source changes to the handoff branch. Your original GPU viewer tree is not overwritten. This cannot synchronize locally patched `main.py` / `renderer_cuda.py` by itself; those require review.
+
 ## Review before pushing
 
 ```bash
