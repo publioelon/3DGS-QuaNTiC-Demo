@@ -1,42 +1,47 @@
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 *.log
 *.tmp
 *.bak
-*.rar
-*.zip
+*.bak_*
 .DS_Store
-.vscode/
 .idea/
+.vscode/
+.venv/
+venv/
+.env
+.env.*
 
-# Large 3DGS / QNTC scene files
-scenes/
-*.ply
+# Trained NTC checkpoints and Gaussian scene assets
 *.pth
 *.pt
 *.ckpt
+*.ply
+*.npz
+*.qblk
+scenes/
+NTCs/
+additional_3dgs/
+wire/
+runtime/
 
-# Evaluation outputs
-renders_eval/
+# Network security, datasets and local state
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.zip
+*.rar
+*.mp4
+*.gif
+*_cache/
+qntc_stream_test/
+QNTC_299_student_states/
+*.db
+
+# Experiment output
 output/
 outputs/
-imgui.ini
-
-# Python cache
-__pycache__/
-*.pyc
-
-# Local backup files
-*.bak
-*.bak_*
-
-# Large scene/model files
-*.pth
-*.ply
-*.zip
-
-# Local output/cache folders
-qntc_stream_test/
 renders_eval/
+imgui.ini
