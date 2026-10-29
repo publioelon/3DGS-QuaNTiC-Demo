@@ -1,72 +1,267 @@
-# Q3DGStream
+# 3DGS-QuaNTiC
 
-### Saliency-Driven Adaptive Streaming of Dynamic 3D Gaussian Splatting over QUIC
+**Live Streaming Dynamic 3D Gaussian Splatting Scenes with Quantized Neural Transformation Caches**
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-Linux-E95420?style=flat-square&logo=ubuntu&logoColor=white)](docs/linux.md)
-[![CUDA](https://img.shields.io/badge/NVIDIA-CUDA-76B900?style=flat-square&logo=nvidia&logoColor=white)](docs/linux.md)
-[![Stage format](https://img.shields.io/badge/NTC-QNP01%20INT4-6D28D9?style=flat-square)](docs/FORMATS.md)
-[![License](https://img.shields.io/badge/License-MIT-2F855A?style=flat-square)](LICENSE)
+3DGS-QuaNTiC is a live streaming demo framework for dynamic 3D Gaussian Splatting scenes represented with Neural Transformation Caches (NTCs).
 
-**Q3DGStream** is a research framework for transmitting dynamic 3D Gaussian Splatting scenes using **compressed Neural Transformation Caches (NTCs)**. It combines block pruning and quantization-aware training (PQAT), multi-view saliency-aware weight ordering, and progressive QUIC delivery.
+The system sends the initial 3D Gaussian scene once and then progressively streams NTC files to update the motion of the scene over time. This repository focuses on compressed NTC delivery, progressive playback, sparse temporal update streaming, and TCP-based live transmission as a stable baseline transport.
 
-![Q3DGStream processing pipeline](docs/assets/pipeline.svg)
+## Features
 
-The initial 3D scene is transferred once. Each animation update then carries a compact NTC whose weight blocks are organized into four saliency priorities. The receiver reconstructs the available weights, executes the NTC and renders updated Gaussians.
+- Live TCP streaming of dynamic 3D Gaussian Splatting scenes.
+- Initial 3DGS scene transmission followed by progressive NTC updates.
+- NTC quantization utility for FP16, INT8, and INT4 conversion.
+- Sparse NTC update streaming through the `--ntc_stride` option.
+- Receiver-side cache for progressive playback.
+- Linux/Ubuntu support with PyTorch CUDA, `tiny-cuda-nn`, and `diff-gaussian-rasterization`.
+- Runtime stream monitor for received files, goodput, cache status, and playback state.
 
-> **Project status:** The original TCP renderer, standalone QNP01 decoder and offline analysis tools are in this repository. A 30-update QUIC pilot has been tested with a locally patched receiver; the exact local viewer patches are still being incorporated. Experimental QUIC scripts require these receiver hooks, as detailed in [QUIC setup](docs/QUIC.md). Adaptive network scheduling and end-to-end saliency QoE are active research targets.
+## Main files
 
-## Quick start
+- `main.py`: viewer and TCP receiver entry point.
+- `live_tcp.py`: receives streamed scene files and writes them to the local cache.
+- `tcp_fvv_sender.py`: sends the initial scene, NTC config, and selected NTC files.
+- `quantize_ntcs.py`: converts NTC files to FP16, INT8, or INT4 and writes a quantization manifest.
+- `renderer_cuda.py`: applies NTC motion and renders the dynamic Gaussian scene.
+- `renderer_ogl.py`: OpenGL rendering path used by the viewer.
+- `util_3dgstream.py`: 3DGStream scene loading utilities.
+- `NTC.py`: Neural Transformation Cache model definition.
+- `requirements-linux.txt`: Linux Python dependencies.
+- `scripts/setup_linux_venv.sh`: creates the Linux Python environment and installs CUDA extensions.
+- `scripts/download_flame_steak.sh`: downloads the Flame Steak demo scene.
 
-**No GPU required:** Clone the project and inspect an example quantized NTC priority stage:
+## Tested platform
 
-```bash
-git clone https://github.com/publioelon/3DGS-QuaNTiC-Demo.git
-cd 3DGS-QuaNTiC-Demo
-python3 q3dgstream.py demo
-python3 q3dgstream.py test
-```
+The Linux version was tested on Ubuntu with an NVIDIA GPU.
 
-**Ubuntu + NVIDIA:** Install the CUDA environment and Flame Steak scene using the existing installers:
+The default setup targets RTX 40-series GPUs:
 
-```bash
-./scripts/setup_linux_venv.sh
-source ~/venvs/qntcstream/bin/activate
-./scripts/download_flame_steak.sh
-python3 q3dgstream.py doctor
-```
+    TCNN_CUDA_ARCHITECTURES=89
+    TORCH_CUDA_ARCH_LIST=8.9
 
-For **GPU validation on Ubuntu**, follow [GPU validation](docs/GPU_VALIDATION.md). For the existing TCP receiver and NTC playback, see [Getting started](docs/QUICKSTART.md). For the **saliency-aware QUIC experiments**, see [QUIC and progressive reconstruction](docs/QUIC.md).
+For RTX 30-series GPUs, use:
 
-## Components
+    TCNN_CUDA_ARCHITECTURES=86
+    TORCH_CUDA_ARCH_LIST=8.6
 
-| Component | What it does | Entry point |
-| :-- | :-- | :-- |
-| **Dynamic 3DGS viewer** | Render initial Gaussians and NTC-based motion | `main.py` / `renderer_cuda.py` |
-| **PQAT and priority generation** | Saliency rank and package retained INT4 NTC blocks | `research/priority/dynamic_299/` |
-| **Multiview saliency** | Build temporal importance from saved SalFoM predictions | `research/priority/dynamic_299/prepare_dynamic_saliency.py` |
-| **HashGrid influence map** | Trace spatial encoding blocks to influenced Gaussians | `research/priority/hashgrid_ntc114/` |
-| **Progressive QUIC prototype** | Transmit frame-indexed P0–P3 stages and additions | `research/quic/` |
-| **Reconstruction evaluation** | Compare saliency order with seeded random order | `research/evaluation/` |
+## 1. Install Ubuntu system packages
 
-## Verified experimental results
+Run:
 
-The **INT4 keep05** NTC uses 1,556 retained blocks of 64 weights. A representative compressed PyTorch wire checkpoint occupies **66.74 KB**, compared with approximately **7.97 MB** for the dense FP32 NTC. Four `.qblk` stages contain **62,296 bytes** of indexed INT4 records and stage headers, excluding separate checkpoint metadata. All **299 / 299** stage sets matched their corresponding compressed checkpoints exactly. Reconstructed 300-frame compressed trajectories matched all 14 saved checkpoint states.
+    sudo apt update
+    sudo apt install -y git build-essential cmake ninja-build pkg-config libglfw3 libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-utils unzip wget
 
-In a 299-frame isolated-transform experiment with five random seeds, saliency-aware ordering reduced relative RMS translation reconstruction error in the highest-priority regions by around **77%–78%** at roughly 75% cumulative block reception, relative to random ordering. Details, protocol distinctions and citations are in [Results](docs/RESULTS.md).
+## 2. Clone the repository
 
-## Documentation
+Run:
 
-| Topic | Guide |
-| :-- | :-- |
-| Installation and first playback | [QUICKSTART](docs/QUICKSTART.md) |
-| Architecture and NTC inference | [ARCHITECTURE](docs/ARCHITECTURE.md) |
-| PQAT, QNP01 `.qblk`, and file types | [FORMATS](docs/FORMATS.md) |
-| QUIC playback, receiver requirements | [QUIC](docs/QUIC.md) |
-| Available metrics and validation | [RESULTS](docs/RESULTS.md) |
-| Research workflow and reproducibility | [EXPERIMENTS](docs/EXPERIMENTS.md) |
-| Development and contribution | [CONTRIBUTING](CONTRIBUTING.md) |
+    cd ~
+    git clone https://github.com/publioelon/3DGS-QuaNTiC-Demo.git
+    cd 3DGS-QuaNTiC-Demo
 
-## Project lineage
+## 3. Create the Linux Python environment
 
-The dynamic scene representation and NTC foundation follow [3DGStream](https://github.com/SJoJoK/3DGStream). Q3DGStream extends this foundation with NTC compression, spatial saliency prioritization and experimental QUIC streaming. The original viewer and setup files remain available; the newer research tools live under `research/` so baseline behavior remains reproducible.
+For RTX 40-series GPUs:
+
+    ./scripts/setup_linux_venv.sh
+    source ~/venvs/qntcstream/bin/activate
+
+For RTX 30-series GPUs:
+
+    TCNN_CUDA_ARCHITECTURES=86 TORCH_CUDA_ARCH_LIST=8.6 ./scripts/setup_linux_venv.sh
+    source ~/venvs/qntcstream/bin/activate
+
+The setup script installs PyTorch CUDA, `cuda-python`, `tiny-cuda-nn`, `diff-gaussian-rasterization`, `simple-knn`, and the OpenGL viewer dependencies.
+
+## 4. Download the Flame Steak demo scene
+
+Run:
+
+    source ~/venvs/qntcstream/bin/activate
+    ./scripts/download_flame_steak.sh
+
+The scene is extracted to:
+
+    ~/qntc_scenes/flame_steak_official
+
+Expected structure:
+
+    flame_steak_official/
+      init_3dgs.ply
+      NTCs/
+        config.json
+        NTC_000000.pth
+        ...
+        NTC_000298.pth
+
+Scene files are not stored in this repository because `.ply` and `.pth` files are large.
+
+## 5. Quantize NTC files
+
+The repository includes `quantize_ntcs.py`, which converts NTC files to FP16, INT8, or INT4.
+
+### FP16 conversion
+
+    python quantize_ntcs.py \
+      --src "$HOME/qntc_scenes/flame_steak_official" \
+      --out "$HOME/qntc_scenes/flame_steak_fp16" \
+      --mode fp16 \
+      --overwrite \
+      --verify
+
+### INT8 conversion
+
+    python quantize_ntcs.py \
+      --src "$HOME/qntc_scenes/flame_steak_official" \
+      --out "$HOME/qntc_scenes/flame_steak_int8_b64" \
+      --mode int8 \
+      --block-size 64 \
+      --overwrite \
+      --verify
+
+### INT4 conversion
+
+    python quantize_ntcs.py \
+      --src "$HOME/qntc_scenes/flame_steak_official" \
+      --out "$HOME/qntc_scenes/flame_steak_int4_b64" \
+      --mode int4 \
+      --block-size 64 \
+      --overwrite \
+      --verify
+
+The script writes `quantization_manifest.json` with file sizes, compression ratio, reduction percentage, and optional reconstruction-error statistics.
+
+In the Flame Steak test scene, the observed NTC reductions were approximately:
+
+- FP16: 49.98%
+- INT8, block size 64: 74.18%
+- INT4, block size 64: 86.68%
+
+FP16 outputs are saved as regular PyTorch tensors and can be streamed directly with the current viewer.
+
+INT8 and INT4 outputs are saved as packed quantized blobs. These files are useful for compression analysis and require loader-side dequantization support before direct rendering.
+
+## 6. Run the TCP demo
+
+Open two terminals.
+
+### Terminal 1: receiver/viewer
+
+Run:
+
+    cd ~/3DGS-QuaNTiC-Demo
+    source ~/venvs/qntcstream/bin/activate
+
+    python main.py \
+      --tcp_listen 5001 \
+      --tcp_bind 127.0.0.1 \
+      --tcp_cache /tmp/qntc_stream_test \
+      --tcp_clear_cache \
+      --frames 300 \
+      --video_fps 30 \
+      --autoplay
+
+### Terminal 2: sender
+
+To stream the original FP32 NTC scene:
+
+    cd ~/3DGS-QuaNTiC-Demo
+    source ~/venvs/qntcstream/bin/activate
+
+    python tcp_fvv_sender.py \
+      --host 127.0.0.1 \
+      --port 5001 \
+      --root "$HOME/qntc_scenes/flame_steak_official" \
+      --start 0 \
+      --end 298 \
+      --ntc_stride 1 \
+      --no_additions
+
+To stream the FP16 quantized NTC scene:
+
+    python tcp_fvv_sender.py \
+      --host 127.0.0.1 \
+      --port 5001 \
+      --root "$HOME/qntc_scenes/flame_steak_fp16" \
+      --start 0 \
+      --end 298 \
+      --ntc_stride 1 \
+      --no_additions
+
+The viewer should display the dynamic Flame Steak scene while the sender streams the initial 3DGS and NTC files.
+
+## 7. Sparse NTC update mode
+
+To stream fewer NTC updates, increase `--ntc_stride`.
+
+Example:
+
+    python tcp_fvv_sender.py \
+      --host 127.0.0.1 \
+      --port 5001 \
+      --root "$HOME/qntc_scenes/flame_steak_fp16" \
+      --start 0 \
+      --end 298 \
+      --ntc_stride 5 \
+      --no_additions
+
+With stride-based streaming, only every N-th NTC is transmitted. The receiver reuses the most recently received NTC for intermediate frames.
+
+## NVIDIA GPU selection on laptops
+
+On laptops with both integrated and dedicated graphics, OpenGL may open on the integrated GPU instead of the NVIDIA GPU.
+
+Check with:
+
+    glxinfo -B | grep -E "OpenGL renderer|OpenGL version"
+
+If the renderer is not NVIDIA, run the receiver with NVIDIA PRIME:
+
+    __NV_PRIME_RENDER_OFFLOAD=1 \
+    __GLX_VENDOR_LIBRARY_NAME=nvidia \
+    python main.py \
+      --tcp_listen 5001 \
+      --tcp_bind 127.0.0.1 \
+      --tcp_cache /tmp/qntc_stream_test \
+      --tcp_clear_cache \
+      --frames 300 \
+      --video_fps 30 \
+      --autoplay
+
+## Linux compatibility note
+
+Linux support required a rasterizer compatibility change in `renderer_cuda.py`.
+
+The Linux-tested setting is:
+
+    "antialiasing": False,
+
+The older setting below was removed because the Linux-installed `diff-gaussian-rasterization` version does not accept it:
+
+    "bwd_depth": False,
+
+## Troubleshooting
+
+### Sender reports connection refused
+
+Start the receiver first. The sender connects to `127.0.0.1:5001`, so the receiver must already be listening on that port.
+
+### Viewer opens but stays black
+
+Check the viewer panel for renderer errors. Also verify that the receiver has received:
+
+    init_3dgs.ply
+    NTCs/config.json
+    NTCs/NTC_000000.pth
+
+### OpenGL uses the wrong GPU
+
+Use the NVIDIA PRIME receiver command shown above.
+
+### INT8 or INT4 scene does not render directly
+
+The current quantization script stores INT8 and INT4 outputs as packed quantized blobs. These formats require loader-side dequantization support before direct rendering.
+
+## Acknowledgment
+
+This project builds on the 3DGStream/3DGStreamViewer codebase and extends it with TCP-based progressive streaming, quantized NTC loading, sparse NTC update support, and live playback/cache monitoring.
