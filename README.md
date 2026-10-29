@@ -36,7 +36,7 @@ source ~/venvs/qntcstream/bin/activate
 python3 q3dgstream.py doctor
 ```
 
-For the existing TCP receiver and NTC playback, see [Getting started](docs/QUICKSTART.md). For the **saliency-aware QUIC experiments**, see [QUIC and progressive reconstruction](docs/QUIC.md).
+For **GPU validation on Ubuntu**, follow [GPU validation](docs/GPU_VALIDATION.md). For the existing TCP receiver and NTC playback, see [Getting started](docs/QUICKSTART.md). For the **saliency-aware QUIC experiments**, see [QUIC and progressive reconstruction](docs/QUIC.md).
 
 ## Components
 
