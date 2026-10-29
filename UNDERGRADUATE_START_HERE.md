@@ -22,6 +22,8 @@ For a fresh Ubuntu install, follow the existing [README](README.md) for the CUDA
 ```bash
 git clone https://github.com/publioelon/3DGS-QuaNTiC-Demo.git
 cd 3DGS-QuaNTiC-Demo
+git fetch origin undergraduate-handoff-2026-10-29
+git switch --track origin/undergraduate-handoff-2026-10-29
 source ~/venvs/qntcstream/bin/activate
 python tools/qntc_handoff_check.py doctor
 python -m unittest discover -s tests -p 'test_qntc_handoff_check.py' -v
